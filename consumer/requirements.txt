@@ -1,0 +1,5 @@
+fastapi==0.95.2
+uvicorn[standard]==0.22.0
+kafka-python==2.1.0
+prometheus-client==0.16.0
+

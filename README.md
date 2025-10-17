@@ -84,7 +84,7 @@ docker compose up -d
 
 ### 3️⃣ Test Producer
 ```bash
-curl http://localhost:8000/produce
+curl -X POST "http://localhost:8000/produce?sensor_id=1"
 ```
 
 ### 4️⃣ Check Consumer Output
@@ -95,4 +95,5 @@ curl http://localhost:8001/stats
 ### 5️⃣ Stop Everything
 ```bash
 docker compose down
+
 ```

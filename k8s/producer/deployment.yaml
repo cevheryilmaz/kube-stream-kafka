@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: producer
+  labels:
+    app: kube-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-producer
+  template:
+    metadata:
+      labels:
+        app: kube-producer
+    spec:
+      containers:
+        - name: producer
+          image: ghcr.io/REPLACE_USER/producer:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+            - name: KAFKA_TOPIC
+              value: "sensor-data"
+          ports:
+            - containerPort: 8000

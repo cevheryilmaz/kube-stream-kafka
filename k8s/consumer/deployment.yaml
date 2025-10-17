@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumer
+  labels:
+    app: kube-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-consumer
+  template:
+    metadata:
+      labels:
+        app: kube-consumer
+    spec:
+      containers:
+        - name: consumer
+          image: ghcr.io/REPLACE_USER/consumer:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+            - name: KAFKA_TOPIC
+              value: "sensor-data"
+            - name: KAFKA_GROUP
+              value: "kube-stream-consumers"
+          ports:
+            - containerPort: 8001

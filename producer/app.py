@@ -1,6 +1,6 @@
 # producer/app.py
 from fastapi import FastAPI
-from kafka import KafkaProducer
+from kafka import KafkaProducer, errors
 import json
 import random
 import time
@@ -12,11 +12,21 @@ KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 TOPIC = os.getenv("KAFKA_TOPIC", "sensor-data")
 
 # Producer
-producer = KafkaProducer(
-    bootstrap_servers=[KAFKA_BOOTSTRAP],
-    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-    linger_ms=10
-)
+for _ in range(10):  # 10 times
+    try:
+        producer = KafkaProducer(
+            bootstrap_servers=[KAFKA_BOOTSTRAP],
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            linger_ms=10
+        )
+        print(f"Connected to Kafka at {KAFKA_BOOTSTRAP}")
+        break
+    except errors.NoBrokersAvailable:
+        print("Kafka not ready, retrying in 5s...")
+        time.sleep(5)
+else:
+    raise RuntimeError(f"Could not connect to Kafka at {KAFKA_BOOTSTRAP}")
+
 
 @app.get("/")
 def root():

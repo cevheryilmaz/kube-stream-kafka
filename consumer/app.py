@@ -24,24 +24,30 @@ stats = {
 }
 
 def start_consumer():
-    consumer = KafkaConsumer(
-        TOPIC,
-        bootstrap_servers=[KAFKA_BOOTSTRAP],
-        group_id=GROUP_ID,
-        value_deserializer=lambda m: json.loads(m.decode("utf-8")),
-        auto_offset_reset="earliest",
-        enable_auto_commit=True
-    )
-    for msg in consumer:
-        val = msg.value
-        temp = float(val.get("temperature", 0.0))
-        # update simple running average
-        stats["count"] += 1
-        prev_avg = stats["avg_temp"]
-        stats["avg_temp"] = ((prev_avg * (stats["count"] - 1)) + temp) / stats["count"]
-        # update prometheus metrics
-        MSG_COUNT.inc()
-        AVG_TEMP.set(stats["avg_temp"])
+    import traceback
+    while True:
+        try:
+            consumer = KafkaConsumer(
+                TOPIC,
+                bootstrap_servers=[KAFKA_BOOTSTRAP],
+                group_id=GROUP_ID,
+                value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+                auto_offset_reset="earliest",
+                enable_auto_commit=True
+            )
+            print("✅ Kafka consumer started")
+            for msg in consumer:
+                val = msg.value
+                temp = float(val.get("temperature", 0.0))
+                stats["count"] += 1
+                prev_avg = stats["avg_temp"]
+                stats["avg_temp"] = ((prev_avg * (stats["count"] - 1)) + temp) / stats["count"]
+                MSG_COUNT.inc()
+                AVG_TEMP.set(stats["avg_temp"])
+        except Exception as e:
+            print("⚠️ Kafka consumer error:", e)
+            traceback.print_exc()
+            time.sleep(5)  # retry after 5s
 
 # Start background thread on import
 thread = threading.Thread(target=start_consumer, daemon=True)

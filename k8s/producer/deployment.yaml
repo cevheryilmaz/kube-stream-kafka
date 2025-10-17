@@ -17,7 +17,7 @@ spec:
       containers:
         - name: producer
           image: ghcr.io/REPLACE_USER/producer:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "kafka:9092"

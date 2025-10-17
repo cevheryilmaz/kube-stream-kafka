@@ -27,43 +27,54 @@ Kafka runs in **single-node mode**.
 ### 1️⃣ docker-compose.yml
 
 ```yaml
-version: '3.8'
-
 services:
   kafka:
-    image: bitnami/kafka:3.7
+    image: confluentinc/cp-kafka:7.8.3
     container_name: kafka
     ports:
       - "9092:9092"
+      - "9093:9093"
     environment:
-      - KAFKA_CFG_NODE_ID=1
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - ALLOW_PLAINTEXT_LISTENER=yes
+      KAFKA_KRAFT_MODE: 'true'
+      CLUSTER_ID: '1L6g7nGhU-eAKfL--X25wo'
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    networks:
+      - kafka-net
 
   producer:
-    build: ./producer
-    container_name: producer
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    depends_on:
-      - kafka
+    build:
+      context: ./producer
     ports:
       - "8000:8000"
-
-  consumer:
-    build: ./consumer
-    container_name: consumer
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       - kafka
+    networks:
+      - kafka-net
+
+  consumer:
+    build:
+      context: ./consumer
     ports:
       - "8001:8001"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    driver: bridge
 ```
 
 ### 2️⃣ Run the Stack

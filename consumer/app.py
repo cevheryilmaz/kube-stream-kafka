@@ -17,10 +17,16 @@ GROUP_ID = os.getenv("KAFKA_GROUP", "kube-stream-consumers")
 # Prometheus metrics
 MSG_COUNT = Counter("sensor_messages_consumed_total", "Total sensor messages consumed")
 AVG_TEMP = Gauge("sensor_avg_temperature", "Average temperature across consumed messages")
+MAX_TEMP = Gauge("sensor_max_temperature", "Maximum temperature seen so far")
+MIN_TEMP = Gauge("sensor_min_temperature", "Minimum temperature seen so far")
 
 stats = {
     "count": 0,
-    "avg_temp": 0.0
+    "avg_temp": 0.0,
+    "max_temp": None,
+    "min_temp": None,
+    "last_message": None,
+    "last_update": None
 }
 
 def start_consumer():
@@ -42,8 +48,14 @@ def start_consumer():
                 stats["count"] += 1
                 prev_avg = stats["avg_temp"]
                 stats["avg_temp"] = ((prev_avg * (stats["count"] - 1)) + temp) / stats["count"]
+                stats["max_temp"] = temp if stats["max_temp"] is None else max(stats["max_temp"], temp)
+                stats["min_temp"] = temp if stats["min_temp"] is None else min(stats["min_temp"], temp)
+                stats["last_message"] = val
+                stats["last_update"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 MSG_COUNT.inc()
                 AVG_TEMP.set(stats["avg_temp"])
+                MAX_TEMP.set(stats["max_temp"])
+                MIN_TEMP.set(stats["min_temp"])
         except Exception as e:
             print("⚠️ Kafka consumer error:", e)
             traceback.print_exc()
@@ -59,7 +71,14 @@ def root():
 
 @app.get("/stats")
 def get_stats():
-    return {"count": stats["count"], "avg_temp": stats["avg_temp"]}
+    return {
+        "count": stats["count"],
+        "avg_temp": stats["avg_temp"],
+        "max_temp": stats["max_temp"],
+        "min_temp": stats["min_temp"],
+        "last_message": stats["last_message"],
+        "last_update": stats["last_update"]
+    }
 
 @app.get("/metrics")
 def metrics():

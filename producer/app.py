@@ -1,10 +1,10 @@
-# producer/app.py
 from fastapi import FastAPI
 from kafka import KafkaProducer, errors
 import json
 import random
 import time
 import os
+import threading
 
 app = FastAPI(title="kube-stream-producer")
 
@@ -58,3 +58,24 @@ def produce_many(n: int):
         sent.append(payload)
     producer.flush()
     return {"status": "sent", "count": len(sent), "data": sent}
+
+def auto_produce():
+    """Arka planda düzenli veri üretir (her 2 saniyede bir)."""
+    while is_running:
+        payload = {
+            "sensor_id": random.randint(1, 5),
+            "temperature": round(random.uniform(20.0, 35.0), 2),
+            "timestamp": time.time()
+        }
+        producer.send(TOPIC, value=payload)
+        producer.flush()
+        print(f"Auto-produced: {payload}")
+        time.sleep(2)
+
+# Otomatik üretimi başlat (daemon thread)
+threading.Thread(target=auto_produce, daemon=True).start()
+
+@app.get("/health")
+def health():
+    """Servisin Kafka bağlantı durumu"""
+    return {"status": "ok", "kafka_bootstrap": KAFKA_BOOTSTRAP, "topic": TOPIC}

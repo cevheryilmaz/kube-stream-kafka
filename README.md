@@ -15,7 +15,7 @@ The setup demonstrates:
 | `producer/` | FastAPI Producer microservice (includes /produce, /health, and auto-producer thread) |
 | `consumer/` | FastAPI Consumer microservice (includes /metrics, /stats, max/min/avg metrics) |
 | `k8s/` | Kubernetes manifests (Deployments & Services for producer and consumer) |
-| `.github/workflows/ci-cd.yml` | CI/CD pipeline (build & push to GHCR + deploy to Kubernetes) |
+| `.github/workflows/ci-cd.yml`    | CI/CD pipeline (build & push to GHCR + deploy to Kubernetes) |
 
 ---
 
@@ -146,4 +146,5 @@ curl http://localhost:8000/health
 docker compose down
 
 ```
+
 
